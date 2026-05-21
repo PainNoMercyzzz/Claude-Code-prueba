@@ -29,24 +29,24 @@ def create_embed(is_morning: bool) -> discord.Embed:
 
     if is_morning:
         color = discord.Color.from_rgb(255, 180, 0)
-        title = "☀️ ¡Buenos días!"
+        title = "☀️ ¡Buenos días mi niña!"
         description = (
-            "**¿Estás disponible y listo para hoy?**\n\n"
-            "Pulsa **✅ Sí** si estás aquí y disponible.\n"
-            "Pulsa **❌ No** si no puedes ahora mismo.\n\n"
-            "*Si no respondes en 5 minutos, te volvemos a preguntar en 30 min.*"
+            "**¿Te has tomado ya la pastilla?**\n\n"
+            "Pulsa **✅ Sí** Si te la has tomado ya.\n"
+            "Pulsa **❌ No** Tomatela Vaga.\n\n"
+            "*Si no respondes en 5 minutos, te lo preguntare de nuevo en 30 min.*"
         )
-        footer = f"☀️ Turno de mañana  •  {now.strftime('%d/%m/%Y %H:%M')}"
+        footer = f"☀️ Pastilla de la mañana  •  {now.strftime('%d/%m/%Y %H:%M')}"
     else:
         color = discord.Color.from_rgb(60, 60, 120)
-        title = "🌙 ¡Buenas noches!"
+        title = "🌙 ¡Buenas noches mi niña!"
         description = (
-            "**¿Estás disponible para el turno de noche?**\n\n"
-            "Pulsa **✅ Sí** si estás aquí y disponible.\n"
-            "Pulsa **❌ No** si no puedes ahora mismo.\n\n"
-            "*Si no respondes en 5 minutos, te volvemos a preguntar en 30 min.*"
+            "**¿Te has tomado ya la pastilla?**\n\n"
+            "Pulsa **✅ Sí** Si te la has tomado ya.\n"
+            "Pulsa **❌ No** Tomatela vaga.\n\n"
+            "*Si no respondes en 5 minutos, te lo preguntare de nuevo en 30 min.*"
         )
-        footer = f"🌙 Turno de noche  •  {now.strftime('%d/%m/%Y %H:%M')}"
+        footer = f"🌙 Pastilla de la noche  •  {now.strftime('%d/%m/%Y %H:%M')}"
 
     embed = discord.Embed(title=title, description=description, color=color)
     embed.set_footer(text=footer)
