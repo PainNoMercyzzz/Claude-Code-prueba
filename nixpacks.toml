@@ -1,8 +1,5 @@
-[phases.setup]
-nixPkgs = ["python311"]
-
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = ["pip install discord.py apscheduler python-dotenv pytz"]
 
 [start]
 cmd = "python bot.py"
