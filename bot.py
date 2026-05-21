@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 import pytz
 import aiohttp
 from aiohttp import web
-import redis as redislib
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 
@@ -20,14 +19,12 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
 TIMEZONE = os.getenv("TIMEZONE", "Europe/Madrid")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-REDIS = redislib.from_url(os.getenv("REDIS_URL", "redis://localhost"))
-
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduler = AsyncIOScheduler(timezone=TIMEZONE)
 
-# ── Health check para Koyeb ──────────────────────────────────────────────────
+# ── Health check para Viirless ───────────────────────────────────────────────
 async def health_check(request):
     return web.Response(text="OK")
 
@@ -41,24 +38,14 @@ async def start_health_server():
     print("🌐 Health server escuchando en puerto 8080")
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_racha():
-    data = REDIS.get("racha_data")
-    if data:
-        return json.loads(data)
-    return {"racha": 0, "ultimo_si": None}
-
-def save_racha(data):
-    REDIS.set("racha_data", json.dumps(data))
-
-async def get_ai_message(is_morning: bool, racha: int) -> str:
+async def get_ai_message(is_morning: bool) -> str:
     turno = "mañana" if is_morning else "noche"
     emoji = "☀️" if is_morning else "🌙"
     prompt = (
         f"Eres un bot cariñoso pero gracioso que le recuerda a su novia que se tome la pastilla. "
-        f"Es por la {turno}. Lleva una racha de {racha} días tomándosela. "
+        f"Es por la {turno}. "
         f"Escribe un mensaje corto (máximo 3 líneas) con el emoji {emoji}, "
         f"con un tono cariñoso, gracioso y un poco regañón. "
-        f"Si la racha es mayor a 0, menciona la racha de forma motivadora. "
         f"No uses asteriscos ni markdown. Solo texto plano con emojis."
     )
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
@@ -82,9 +69,7 @@ async def send_embed(is_morning: bool):
         print(f"❌ Canal no encontrado: {CHANNEL_ID}")
         return
 
-    racha_data = load_racha()
-    racha = racha_data.get("racha", 0)
-    ai_text = await get_ai_message(is_morning, racha)
+    ai_text = await get_ai_message(is_morning)
 
     color = discord.Color.from_rgb(255, 180, 0) if is_morning else discord.Color.from_rgb(60, 60, 120)
     tz = pytz.timezone(TIMEZONE)
@@ -92,10 +77,7 @@ async def send_embed(is_morning: bool):
 
     embed = discord.Embed(description=ai_text, color=color)
     embed.add_field(name="", value="Pulsa **✅ Sí** si ya te la has tomado.\nPulsa **❌ No** si aún no, vaga 😤", inline=False)
-    if racha > 0:
-        embed.set_footer(text=f"🔥 Llevas {racha} día{'s' if racha != 1 else ''} seguido{'s' if racha != 1 else ''} • {now.strftime('%d/%m/%Y %H:%M')}")
-    else:
-        embed.set_footer(text=f"💊 Recuerda tu pastilla • {now.strftime('%d/%m/%Y %H:%M')}")
+    embed.set_footer(text=f"💊 Recuerda tu pastilla • {now.strftime('%d/%m/%Y %H:%M')}")
     embed.timestamp = now
 
     view = ConfirmButtons(is_morning=is_morning, timeout=300)
@@ -133,37 +115,15 @@ class ConfirmButtons(discord.ui.View):
         tz = pytz.timezone(TIMEZONE)
         now = datetime.now(tz)
 
-        racha_data = load_racha()
-        ultimo = racha_data.get("ultimo_si")
-        hoy = now.strftime("%Y-%m-%d")
-
-        if ultimo != hoy:
-            racha_data["racha"] = racha_data.get("racha", 0) + 1
-            racha_data["ultimo_si"] = hoy
-            save_racha(racha_data)
-
-        racha = racha_data["racha"]
-
         for item in self.children:
             item.disabled = True
         await interaction.message.edit(view=self)
 
-        if racha == 7:
-            msg = f"✅ ¡SEMANA COMPLETA! 🎉🔥 Llevas 7 días seguidos tomándotela, ¡eres una campeona!"
-        elif racha >= 3:
-            msg = f"✅ ¡Bien hecha! 🔥 Llevas **{racha} días** seguidos. ¡Sigue así!"
-        else:
-            msg = f"✅ Anotado a las **{now.strftime('%H:%M:%S')}** — pastilla tomada 💊"
-
+        msg = f"✅ Anotado a las **{now.strftime('%H:%M:%S')}** — pastilla tomada 💊 ¡Bien hecha!"
         await interaction.response.send_message(msg, allowed_mentions=discord.AllowedMentions.none())
 
     @discord.ui.button(label="❌ No", style=discord.ButtonStyle.danger)
     async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        racha_data = load_racha()
-        if racha_data.get("racha", 0) > 0:
-            racha_data["racha"] = 0
-            save_racha(racha_data)
-
         await interaction.response.send_message(
             "❌ Vaga... te recuerdo en 30 minutos 😒",
             ephemeral=True
