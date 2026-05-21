@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 import os
-import json
 import random
 from datetime import datetime, timedelta
 import pytz
@@ -151,12 +150,14 @@ async def on_ready():
 
 @bot.tree.command(name="test_morning", description="Prueba el mensaje de mañana")
 async def test_morning(interaction: discord.Interaction):
-    await interaction.response.send_message("Enviando...", ephemeral=True)
+    await interaction.response.defer(ephemeral=True)
     await send_embed(is_morning=True)
+    await interaction.followup.send("✅ Embed enviado!", ephemeral=True)
 
 @bot.tree.command(name="test_night", description="Prueba el mensaje de noche")
 async def test_night(interaction: discord.Interaction):
-    await interaction.response.send_message("Enviando...", ephemeral=True)
+    await interaction.response.defer(ephemeral=True)
     await send_embed(is_morning=False)
+    await interaction.followup.send("✅ Embed enviado!", ephemeral=True)
 
 bot.run(TOKEN)
