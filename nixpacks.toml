@@ -1,5 +1,0 @@
-[phases.install]
-cmds = ["pip install discord.py apscheduler python-dotenv pytz"]
-
-[start]
-cmd = "python bot.py"
