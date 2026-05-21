@@ -8,6 +8,7 @@ import random
 from datetime import datetime, timedelta
 import pytz
 import aiohttp
+from aiohttp import web
 import redis as redislib
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
@@ -25,6 +26,20 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduler = AsyncIOScheduler(timezone=TIMEZONE)
+
+# ── Health check para Koyeb ──────────────────────────────────────────────────
+async def health_check(request):
+    return web.Response(text="OK")
+
+async def start_health_server():
+    app = web.Application()
+    app.router.add_get("/", health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 8080)
+    await site.start()
+    print("🌐 Health server escuchando en puerto 8080")
+# ─────────────────────────────────────────────────────────────────────────────
 
 def load_racha():
     data = REDIS.get("racha_data")
@@ -162,6 +177,7 @@ class ConfirmButtons(discord.ui.View):
 
 @bot.event
 async def on_ready():
+    await start_health_server()
     print(f"✅ Bot conectado como {bot.user}")
     scheduler.add_job(send_embed, "cron", hour=10, minute=0, args=[True], id="morning")
     scheduler.add_job(send_embed, "cron", hour=0, minute=0, args=[False], id="night")
