@@ -8,6 +8,7 @@ import random
 from datetime import datetime, timedelta
 import pytz
 import aiohttp
+import redis as redislib
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 
@@ -18,22 +19,21 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
 TIMEZONE = os.getenv("TIMEZONE", "Europe/Madrid")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+REDIS = redislib.from_url(os.getenv("REDIS_URL", "redis://localhost"))
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 scheduler = AsyncIOScheduler(timezone=TIMEZONE)
 
-RACHA_FILE = "racha.json"
-
 def load_racha():
-    if os.path.exists(RACHA_FILE):
-        with open(RACHA_FILE, "r") as f:
-            return json.load(f)
+    data = REDIS.get("racha_data")
+    if data:
+        return json.loads(data)
     return {"racha": 0, "ultimo_si": None}
 
 def save_racha(data):
-    with open(RACHA_FILE, "w") as f:
-        json.dump(data, f)
+    REDIS.set("racha_data", json.dumps(data))
 
 async def get_ai_message(is_morning: bool, racha: int) -> str:
     turno = "mañana" if is_morning else "noche"
@@ -134,7 +134,7 @@ class ConfirmButtons(discord.ui.View):
         await interaction.message.edit(view=self)
 
         if racha == 7:
-            msg = f"✅ ¡SEMANA COMPLETA! 🎉🔥 Llevas 7 días seguidos tomándotela, eres una campeona!"
+            msg = f"✅ ¡SEMANA COMPLETA! 🎉🔥 Llevas 7 días seguidos tomándotela, ¡eres una campeona!"
         elif racha >= 3:
             msg = f"✅ ¡Bien hecha! 🔥 Llevas **{racha} días** seguidos. ¡Sigue así!"
         else:
