@@ -46,7 +46,7 @@ async def get_ai_message(is_morning: bool, racha: int) -> str:
         f"Si la racha es mayor a 0, menciona la racha de forma motivadora. "
         f"No uses asteriscos ni markdown. Solo texto plano con emojis."
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     body = {"contents": [{"parts": [{"text": prompt}]}]}
     try:
         async with aiohttp.ClientSession() as session:
